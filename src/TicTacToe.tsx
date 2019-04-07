@@ -1,6 +1,6 @@
 import React from 'react'
 
-const hasWin = (board: number[]): boolean => {
+const hasWin = (board: number[], defaultValue = -1): boolean => {
     const three = Array(3).fill(0)
 
     // Check rows 012, 345, 678
@@ -8,7 +8,8 @@ const hasWin = (board: number[]): boolean => {
         const offset = i * 3
         return three.every((_, j) => {
             const position = offset + j
-            return board[position] !== -1
+            return board[position] !== defaultValue
+                && board[offset] !== defaultValue
                 && board[position] === board[offset]
         })
     })
@@ -22,7 +23,8 @@ const hasWin = (board: number[]): boolean => {
         const offset = i
         return three.every((_, j) => {
             const position = offset + (j * 3)
-            return board[position] !== -1
+            return board[position] !== defaultValue
+                && board[offset] !== defaultValue
                 && board[position] === board[offset]
         })
     })
@@ -31,20 +33,37 @@ const hasWin = (board: number[]): boolean => {
         return true
     }
 
-    // Check diagonals
+    // Check diagonals, 048, 246
+    if (board[0] === board[4]
+        && board[4] === board[8]
+        && board[4] !== defaultValue) {
+        return true
+    }
+    if (board[2] === board[4]
+        && board[4] === board[6]
+        && board[4] !== defaultValue) {
+        return true
+    }
+
 
     return false
 }
 
 export function useTicTacToe() {
+    const defaultValue = -1
     const [player, setPlayer] = React.useState(true)
     const [hasWon, setHasWon] = React.useState(false)
-    const [board, setBoard] = React.useState(Array(9).fill(-1))
-    const clickPosition = (board: number[], position: number, player: boolean) => {
-        board[position] = player ? 1 : 0
+    const [board, setBoard] = React.useState(Array(9).fill(defaultValue))
 
-        const win = hasWin(board)
-        setBoard(board)
+    const clickPosition = (board: number[], position: number, player: boolean) => {
+        if (hasWon) {
+            return
+        }
+
+        const nextBoard = [...board]
+        nextBoard[position] = player ? 1 : 0
+        const win = hasWin(nextBoard, defaultValue)
+        setBoard(nextBoard)
         if (win) {
             setHasWon(true)
         }
@@ -53,16 +72,23 @@ export function useTicTacToe() {
         }
     }
 
+    const reset = () => {
+        setBoard(Array(9).fill(defaultValue))
+        setPlayer(true)
+        setHasWon(false)
+    }
+
     return {
         board,
         player,
         hasWon,
-        clickPosition
+        clickPosition,
+        reset,
     }
 }
 
 export const TicTacToe: React.FC = () => {
-    const { board, player, hasWon, clickPosition } = useTicTacToe()
+    const { board, player, hasWon, clickPosition, reset } = useTicTacToe()
 
     return (
         <>
@@ -81,6 +107,7 @@ export const TicTacToe: React.FC = () => {
                 )}
             </div>
             <div>
+                <button onClick={() => reset()}>Reset</button>
                 {hasWon
                     ? `Player ${player ? 1 : 2} has won!`
                     : player
