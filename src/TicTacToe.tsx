@@ -1,52 +1,23 @@
 import React from 'react'
 
-const hasWin = (board: number[], defaultValue = -1): boolean => {
-    const three = Array(3).fill(0)
+const hasWin = (squares: number[], defaultValue = -1): boolean => {
+    const lines = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+    ]
 
-    // Check rows 012, 345, 678
-    const rowWin = three.some((_, i) => {
-        const offset = i * 3
-        return three.every((_, j) => {
-            const position = offset + j
-            return board[position] !== defaultValue
-                && board[offset] !== defaultValue
-                && board[position] === board[offset]
-        })
+    return lines.some(line => {
+        const [a, b, c] = line
+        return squares[a] !== defaultValue
+            && squares[a] === squares[b]
+            && squares[a] === squares[c]
     })
-
-    if (rowWin) {
-        return true
-    }
-
-    // Check columns 036, 147, 258
-    const colWin = three.some((_, i) => {
-        const offset = i
-        return three.every((_, j) => {
-            const position = offset + (j * 3)
-            return board[position] !== defaultValue
-                && board[offset] !== defaultValue
-                && board[position] === board[offset]
-        })
-    })
-
-    if (colWin) {
-        return true
-    }
-
-    // Check diagonals, 048, 246
-    if (board[0] === board[4]
-        && board[4] === board[8]
-        && board[4] !== defaultValue) {
-        return true
-    }
-    if (board[2] === board[4]
-        && board[4] === board[6]
-        && board[4] !== defaultValue) {
-        return true
-    }
-
-
-    return false
 }
 
 export function useTicTacToe() {
