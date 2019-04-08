@@ -18,6 +18,10 @@
     display: block;
 }
 
+.picker__option__highlighted {
+    background-color: rgb(119, 241, 145);
+}
+
 .picker__option:hover {
     background-color: rgb(119, 241, 145);
 }

@@ -216,6 +216,12 @@ const getMatchedOptions = (searchText: string, options: IOption[], fuse: Fuse<IO
             })
 }
 
+type IndexFunction = (x: number, limit: number) => number
+// TODO: Id function doesn't need limit but TS requires consistent arguments
+const id = (x: number) => x
+const increment = (x: number, limit: number) => (x + 1) > limit ? 0 : x + 1
+const decrement = (x: number, limit: number) => (x - 1) < 0 ? limit : x - 1
+
 export const Picker: React.FC<Props> = (props) => {
     const fuseRef = React.useRef(new Fuse(props.options, fuseOptions))
     const [searchText, setSearchText] = React.useState('')
@@ -228,27 +234,49 @@ export const Picker: React.FC<Props> = (props) => {
         setMatchedOptions(computed)
     }, [props.options.length, searchText])
 
-    const onKeyDown = (key: string) => {
-        if (key !== 'Enter') {
-            return
+    const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+        let modifyFunction: IndexFunction = id
+        switch (event.key) {
+            case 'ArrowUp': {
+                modifyFunction = decrement
+                break;
+            }
+            case 'ArrowDown':
+                modifyFunction = increment
+                break;
+            case 'Enter':
+            case 'Tab':
+                // Only simulate completion on 'forward' tab
+                if (event.shiftKey) {
+                    return
+                }
+
+                onSelectHighlightedOption()
+                event.stopPropagation()
+                event.preventDefault()
+                break;
         }
 
-        const trimmedText = searchText.trim()
+        setHighlighIndex(modifyFunction(highlightIndex, matchedOptions.length - 1))
     }
 
     const onClickNewOption = () => console.log(`onClickNewOption`)
-    const onClickOption = (option: IOption) => console.log('option: ', option)
-
-    console.log({ matchedOptions })
-    React.useDebugValue(`This is debug value: ${matchedOptions}`)
+    const onClickOption = (option: IOption) => selectOption(option)
+    const selectOption = (option: IOption) => console.log('Selected Option: ', option)
+    const onSelectHighlightedOption = () => {
+        const option = matchedOptions[highlightIndex]
+        if (option) {
+            selectOption(option.original)
+        }
+    }
 
     return <div className={PickerStyles.picker}>
-        <input type="text" value={searchText} onChange={e => setSearchText(e.target.value)} onKeyDown={e => onKeyDown(e.key)} />
+        <input type="text" value={searchText} onChange={e => setSearchText(e.target.value)} onKeyDown={onKeyDown} />
         <button onClick={() => onClickNewOption()}>New Option</button>
         <div className={PickerStyles.list}>
             {matchedOptions.map((matchedOption, i) =>
                 <button
-                    className={PickerStyles.picker__option}
+                    className={`${PickerStyles.picker__option} ${i === highlightIndex ? PickerStyles.picker__option__highlighted : ''}`}
                     key={i}
                     onClick={() => onClickOption(matchedOption.original)}
                 >
