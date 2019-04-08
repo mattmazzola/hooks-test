@@ -39,6 +39,7 @@ export const App: React.FC = () => {
           maxDisplayedOptions={8}
           options={options}
           onClickNewOption={onClickNewOption}
+          onSelectOption={o => console.log(`onSelectOption: `, o)}
         />
       </div>
     </div>

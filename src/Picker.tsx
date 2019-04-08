@@ -10,6 +10,7 @@ export interface IOption {
 export type Props = {
     options: IOption[]
     onClickNewOption: () => void
+    onSelectOption: (option: IOption) => void
     maxDisplayedOptions: number
 }
 
@@ -222,7 +223,6 @@ const id = (x: number) => x
 const increment = (x: number, limit: number) => (x + 1) > limit ? 0 : x + 1
 const decrement = (x: number, limit: number) => (x - 1) < 0 ? limit : x - 1
 
-
 const usePicker = (options: IOption[],
     maxDisplayedOptions: number,
     onSelectOption: (option: IOption) => void,
@@ -237,6 +237,18 @@ const usePicker = (options: IOption[],
         const computed = getMatchedOptions(searchText, options, fuseRef.current, maxDisplayedOptions)
         setMatchedOptions(computed)
     }, [options.length, searchText])
+
+    // Ensure highlight index is within bounds
+    React.useEffect(() => {
+        // Decreate highlight index to last item when items list shrinks due to search filter
+        let min = highlightIndex > (matchedOptions.length - 1)
+            ? (matchedOptions.length - 1)
+            : highlightIndex
+
+        // Don't allow an index less than 0 (if items length is 0)
+        min = Math.max(0, min)
+        setHighlighIndex(min)
+    }, [matchedOptions.length])
 
     const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
         let modifyFunction: IndexFunction = id
@@ -286,7 +298,7 @@ export const Picker: React.FC<Props> = (props) => {
     const { searchText, setSearchText, onKeyDown, matchedOptions, onClickOption, highlightIndex } = usePicker(
         props.options,
         props.maxDisplayedOptions,
-        o => console.log(`selected: `, o),
+        props.onSelectOption,
     )
 
     return <div className={PickerStyles.picker}>
