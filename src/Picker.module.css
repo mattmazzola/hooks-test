@@ -1,0 +1,23 @@
+.picker {
+    display: grid;
+    grid-gap: 2px;
+    max-width: 300px;
+}
+
+.picker button {
+    text-align: left;
+}
+
+.list {
+    display: grid;
+}
+
+.picker__option {
+    background: none;
+    border: none;
+    display: block;
+}
+
+.picker__option:hover {
+    background-color: rgb(119, 241, 145);
+}

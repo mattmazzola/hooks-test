@@ -1,9 +1,11 @@
 body {
   padding: 3em;
+  background: #cecece;
 }
 
 .container {
   padding: 2em;
+  border-bottom: 1px solid black;
 }
 
 .tic-tac-toe {
