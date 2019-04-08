@@ -4,7 +4,6 @@ import TicTacToe from './TicTacToe'
 import Picker, { IOption } from './Picker'
 
 export const App: React.FC = () => {
-  
   const [options, setOptions] = React.useState<IOption[]>([])
   React.useDebugValue(new Date(), date => date.toISOString());
   React.useEffect(() => {
@@ -23,6 +22,10 @@ export const App: React.FC = () => {
       })
   }, [])
 
+  const onClickNewOption = () => {
+    setOptions(os => [...os, { name: `New Option ${Math.floor(Math.random() * 10)}` } ])
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -32,7 +35,11 @@ export const App: React.FC = () => {
         <TicTacToe />
       </div>
       <div className="container">
-        <Picker options={options} />
+        <Picker
+          maxDisplayedOptions={8}
+          options={options}
+          onClickNewOption={onClickNewOption}
+        />
       </div>
     </div>
   );

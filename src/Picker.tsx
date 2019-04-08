@@ -9,6 +9,8 @@ export interface IOption {
 
 export type Props = {
     options: IOption[]
+    onClickNewOption: () => void
+    maxDisplayedOptions: number
 }
 
 export interface MatchedOption<T> {
@@ -191,7 +193,7 @@ export const convertTextAndMatchedIndiciesToMatchedText = (text: string, indicie
         return indexMatches
     }).reduce((a, b) => [...a, ...b], [])
 
-    if(lastIndex < text.length) {
+    if (lastIndex < text.length) {
         adjacentIndicies.push({
             indices: [lastIndex, text.length],
             matched: false
@@ -201,17 +203,15 @@ export const convertTextAndMatchedIndiciesToMatchedText = (text: string, indicie
     return adjacentIndicies
 }
 
-const getMatchedOptions = (searchText: string, options: IOption[], fuse: Fuse<IOption>): MatchedOption<IOption>[] => {
+const getMatchedOptions = (searchText: string, options: IOption[], fuse: Fuse<IOption>, maxDisplayedOptions: number): MatchedOption<IOption>[] => {
     return searchText.trim().length === 0
-        ? options.map(convertOptionToMatchedOption)
-        : (() => {
-            const search = (fuse.search(searchText) as any[])
-            console.log({ search })
-            return search
-        })()
+        ? options
+            .filter((_, i) => i < maxDisplayedOptions)
+            .map(convertOptionToMatchedOption)
+        : (fuse.search(searchText) as any[])
+            .filter((_, i) => i < maxDisplayedOptions)
             .map((result: Fuse.FuseResult<IOption>) => {
                 const matches = convertTextAndMatchedIndiciesToMatchedText(result.item.name, result.matches[0].indices)
-                console.log({ text: result.item.name, matches })
                 return convertMatchedTextIntoMatchedOption(result.item.name, result.matches[0].indices, result.item)
             })
 }
@@ -222,17 +222,21 @@ const id = (x: number) => x
 const increment = (x: number, limit: number) => (x + 1) > limit ? 0 : x + 1
 const decrement = (x: number, limit: number) => (x - 1) < 0 ? limit : x - 1
 
-export const Picker: React.FC<Props> = (props) => {
-    const fuseRef = React.useRef(new Fuse(props.options, fuseOptions))
+
+const usePicker = (options: IOption[],
+    maxDisplayedOptions: number,
+    onSelectOption: (option: IOption) => void,
+) => {
+    const fuseRef = React.useRef(new Fuse(options, fuseOptions))
     const [searchText, setSearchText] = React.useState('')
     const [highlightIndex, setHighlighIndex] = React.useState(0)
-    const [matchedOptions, setMatchedOptions] = React.useState(() => getMatchedOptions(searchText, props.options, fuseRef.current))
+    const [matchedOptions, setMatchedOptions] = React.useState<MatchedOption<IOption>[]>([])
 
     React.useEffect(() => {
-        fuseRef.current.setCollection(props.options)
-        const computed = getMatchedOptions(searchText, props.options, fuseRef.current)
+        fuseRef.current.setCollection(options)
+        const computed = getMatchedOptions(searchText, options, fuseRef.current, maxDisplayedOptions)
         setMatchedOptions(computed)
-    }, [props.options.length, searchText])
+    }, [options.length, searchText])
 
     const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
         let modifyFunction: IndexFunction = id
@@ -260,19 +264,34 @@ export const Picker: React.FC<Props> = (props) => {
         setHighlighIndex(modifyFunction(highlightIndex, matchedOptions.length - 1))
     }
 
-    const onClickNewOption = () => console.log(`onClickNewOption`)
-    const onClickOption = (option: IOption) => selectOption(option)
-    const selectOption = (option: IOption) => console.log('Selected Option: ', option)
+    const onClickOption = (option: IOption) => onSelectOption(option)
     const onSelectHighlightedOption = () => {
         const option = matchedOptions[highlightIndex]
         if (option) {
-            selectOption(option.original)
+            onSelectOption(option.original)
         }
     }
 
+    return {
+        searchText,
+        setSearchText,
+        onKeyDown,
+        matchedOptions,
+        onClickOption,
+        highlightIndex,
+    }
+}
+
+export const Picker: React.FC<Props> = (props) => {
+    const { searchText, setSearchText, onKeyDown, matchedOptions, onClickOption, highlightIndex } = usePicker(
+        props.options,
+        props.maxDisplayedOptions,
+        o => console.log(`selected: `, o),
+    )
+
     return <div className={PickerStyles.picker}>
         <input type="text" value={searchText} onChange={e => setSearchText(e.target.value)} onKeyDown={onKeyDown} />
-        <button onClick={() => onClickNewOption()}>New Option</button>
+        <button onClick={props.onClickNewOption}>New Option</button>
         <div className={PickerStyles.list}>
             {matchedOptions.map((matchedOption, i) =>
                 <button
